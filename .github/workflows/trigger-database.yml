@@ -1,0 +1,43 @@
+name: Trigger Database Script
+
+on:
+  # Run daily at 6 AM UTC
+  schedule:
+    - cron: '0 5 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Optionally trigger on push to main branch
+  # push:
+  #   branches: [ main ]
+
+jobs:
+  trigger-database-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Trigger Database Script
+      run: |
+        echo "Calling database update endpoint..."
+        
+        # Make the HTTP GET request
+        response=$(curl -s -w "%{http_code}" -o response.txt http://159.195.10.64:3000/data)
+        http_code=$(echo $response | tail -c 4)
+        
+        echo "HTTP Status Code: $http_code"
+        echo "Response:"
+        cat response.txt
+        
+        # Check if request was successful
+        if [ $http_code -eq 200 ]; then
+          echo "✅ Database script triggered successfully"
+        else
+          echo "❌ Failed to trigger database script"
+          exit 1
+        fi
+
+    - name: Log completion
+      if: always()
+      run: |
+        echo "Database trigger job completed at $(date)"
